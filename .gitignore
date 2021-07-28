@@ -1,0 +1,6 @@
+main.sym
+__pycache__/
+data.db
+dist/
+clvm/
+YAKU-*-log.txt
