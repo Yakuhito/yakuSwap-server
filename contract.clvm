@@ -12,7 +12,7 @@
 	(defconstant YAKUSWAP_ADDRESS REPLACE_WITH_YAKUSWAP_ADDRESS)
 	(defconstant MAX_BLOCK_HEIGHT REPLACE_WITH_MAX_BLOCK_HEIGHT)
 
-	(defun get_exchange_fee (foo) 
+	(defun-inline get_exchange_fee (foo) 
 		(+ (f (divmod (* 7 (- AMOUNT FEE)) 1000)) 1)
 	)
 
