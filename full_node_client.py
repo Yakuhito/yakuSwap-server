@@ -21,14 +21,14 @@ class FullNodeClient():
 		if debug:
 			print(url)
 		if self.logfile is not None:
-			logfile.write(f"Request to {endpoint}, data: {data}")
+			logfile.write(f"Request to {endpoint}, data: {data}\n")
 			logfile.flush()
 		try:
 			r = requests.post(url, json=data, cert=(self.cert_path, self.key_path), verify=False)
 			if debug:
 				print(endpoint, data, r.text)
 			if self.logfile is not None:
-				logfile.write(f"Request to {endpoint}, data: {data}, response: {r.text}")
+				logfile.write(f"Request to {endpoint}, data: {data}, response: {r.text}\n")
 				logfile.flush()
 			return r.json()
 		except:

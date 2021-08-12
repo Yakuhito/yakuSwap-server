@@ -414,7 +414,7 @@ def tradeCode(trade_id):
 		else:
 			coin_record_one, cancelTrade = shouldCancelTrade(trade_index, trade, trade_currency_one, currency_one, coin_record_one)
 
-		trade_threads_files[trade_index].write(f"Cancel trade: {cancelTrade}")
+		trade_threads_files[trade_index].write(f"Cancel trade: {cancelTrade}\n")
 		if cancelTrade:
 			solution_program = getSolutionProgram("CANCEL-" + str(random.SystemRandom().getrandbits(128))).as_bin().hex()
 			if trade.is_buyer:
