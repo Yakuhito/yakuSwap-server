@@ -8,21 +8,28 @@ from config import debug
 urllib3.disable_warnings()
 
 class FullNodeClient():
-	def __init__(self, ssl_directory, host, port):
+	def __init__(self, ssl_directory, host, port, logfile=None):
 		self.cert_path = os.path.join(ssl_directory, 'full_node/private_full_node.crt')
 		self.key_path = os.path.join(ssl_directory, 'full_node/private_full_node.key')
 		self.host = host
 		self.port = port
 		self.API_url = f"https://{host}:{port}"
+		self.logfile = logfile
 
 	def _makeRequest(self, endpoint, data):
 		url = f"{self.API_url}{endpoint}"
 		if debug:
 			print(url)
+		if self.logfile is not None:
+			logfile.write(f"Request to {endpoint}, data: {data}")
+			logfile.flush()
 		try:
 			r = requests.post(url, json=data, cert=(self.cert_path, self.key_path), verify=False)
 			if debug:
 				print(endpoint, data, r.text)
+			if self.logfile is not None:
+				logfile.write(f"Request to {endpoint}, data: {data}, response: {r.text}")
+				logfile.flush()
 			return r.json()
 		except:
 			return {}
@@ -74,15 +81,3 @@ class FullNodeClient():
 		if resp == {} or resp.get("coin_solution", -1) == -1:
 			return False
 		return resp["coin_solution"]["solution"]
-
-if __name__ == "__main__":
-	t = time.time()
-	test_client = FullNodeClient(
-		"/home/yakuhito/.chia/mainnet/config/ssl/",
-		"127.0.0.1",
-		"8555"
-	)
-	height = test_client.getBlockchainHeight()
-	transaction_id = test_client.getContractConfirmedBlockIndex("98e3d93ae185a505f9eaa184ad3f6310845dcfc81855b5f9aa80abe8c18aa99b", height - 7 - 5000, height)
-	print(transaction_id)
-	print(time.time() - t)

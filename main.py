@@ -136,7 +136,8 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 	full_node_client = FullNodeClient(
 		currency.ssl_directory,
 		currency.host,
-		currency.port
+		currency.port,
+		trade_threads_files[trade_index]
 	)
 
 	amount_to_send = trade_currency.total_amount - trade_currency.fee
@@ -198,7 +199,8 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 	full_node_client = FullNodeClient(
 		currency.ssl_directory,
 		currency.host,
-		currency.port
+		currency.port,
+		trade_threads_files[trade_index]
 	)
 
 	if coin_record == False:
@@ -253,7 +255,8 @@ def tradeClaimContract(trade_index, trade, trade_currency, currency, solution_pr
 	full_node_client = FullNodeClient(
 		currency.ssl_directory,
 		currency.host,
-		currency.port
+		currency.port,
+		trade_threads_files[trade_index]
 	)
 
 	if coin_record == False:
@@ -306,7 +309,8 @@ def shouldCancelTrade(trade_index, trade, trade_currency, currency, coin_record)
 	full_node_client = FullNodeClient(
 		currency.ssl_directory,
 		currency.host,
-		currency.port
+		currency.port,
+		trade_threads_files[trade_index]
 	)
 
 	if coin_record == False:
