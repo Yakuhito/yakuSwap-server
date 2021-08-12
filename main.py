@@ -217,9 +217,16 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 
 	trade_threads_messages[trade_index] = "Getting contract solution..."
 	spent_block_index = coin_record["spent_block_index"]
+
+	while spent_block_index == 0:
+		time.sleep(15)
+		height = full_node_client.getBlockchainHeight()
+		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 10000 - trade_currency.max_block_height, True)
+		spent_block_index = coin_record["spent_block_index"]
+
 	coin = coin_record["coin"]
 	coin_id = std_hash(bytes.fromhex(coin["parent_coin_info"][2:]) + bytes.fromhex(coin["puzzle_hash"][2:]) + int_to_bytes(coin["amount"])).hex()
-	trade_threads_files[trade_index].write(f"Coin id: {coin_id}\n")
+	trade_threads_files[trade_index].write(f"Coin id: {coin_id}\nSpent block index: {spent_block_index}\n")
 	trade_threads_files[trade_index].flush()
 	sol = full_node_client.getCoinSolution(coin_id, spent_block_index)
 	while sol == False:
