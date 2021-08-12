@@ -1,5 +1,5 @@
 echo debug off!
-echo debug = False > config.py
+echo false > .debug
 
 echo install python packages
 pip install -r requirements.txt

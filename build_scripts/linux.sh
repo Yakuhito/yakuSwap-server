@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # debug off!
-sed -i 's/debug = True/debug = False/g' config.py
+echo false > .debug
 
 # install python packages
 pip install -r requirements.txt
