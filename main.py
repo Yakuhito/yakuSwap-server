@@ -151,7 +151,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		trade_threads_addresses[trade_index] = programAddress
 
 	if wait:
-		time.sleep(300)
+		time.sleep(180)
 
 	height = full_node_client.getBlockchainHeight()
 	contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 7 - trade_currency.max_block_height)
