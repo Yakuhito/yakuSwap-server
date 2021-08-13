@@ -186,20 +186,26 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 
 	trade_threads_files[trade_index].write(f"Contract coin record: {contract_coin_record}\n")
 	trade_threads_files[trade_index].flush()
-	confirmed_block_index = contract_coin_record['confirmed_block_index']
-	trade_threads_messages[trade_index] = "Waiting for transaction confirmation..."
-	trade_threads_addresses[trade_index] = None
-
-	height = full_node_client.getBlockchainHeight()
-	while confirmed_block_index + trade_currency.min_confirmation_height > height:
-		delta = height - confirmed_block_index
-		trade_threads_messages[trade_index] = f"Waiting for transaction confirmation ({delta} / {trade_currency.min_confirmation_height})"
+	if shouldCancel:
+		trade_threads_files[trade_index].write(f"Should cancel!\n")
+		trade_threads_files[trade_index].flush()
+		trade_threads_messages[trade_index] = "Cancelling trade..."
 		trade_threads_addresses[trade_index] = None
-		time.sleep(15)
-		height = full_node_client.getBlockchainHeight()
+	else:
+		confirmed_block_index = contract_coin_record['confirmed_block_index']
+		trade_threads_messages[trade_index] = "Waiting for transaction confirmation..."
+		trade_threads_addresses[trade_index] = None
 
-	trade_threads_messages[trade_index] = "Commencing to next step..."
-	trade_threads_addresses[trade_index] = None
+		height = full_node_client.getBlockchainHeight()
+		while confirmed_block_index + trade_currency.min_confirmation_height > height:
+			delta = height - confirmed_block_index
+			trade_threads_messages[trade_index] = f"Waiting for transaction confirmation ({delta} / {trade_currency.min_confirmation_height})"
+			trade_threads_addresses[trade_index] = None
+			time.sleep(15)
+			height = full_node_client.getBlockchainHeight()
+
+		trade_threads_messages[trade_index] = "Commencing to next step..."
+		trade_threads_addresses[trade_index] = None
 
 	time.sleep(3)
 	return shouldCancel, contract_coin_record
