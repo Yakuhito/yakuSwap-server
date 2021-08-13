@@ -117,7 +117,7 @@ trade_threads_messages = []
 trade_threads_addresses = []
 trade_threads_files = []
 
-def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_contract, wait = False):
+def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_contract, wait = False, other_trade_currency = None):
 	global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files
 
 	program = getContractProgram(
@@ -154,11 +154,34 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 	if wait:
 		time.sleep(180)
 
+	shouldCancel = False
+	if other_trade_currency is not None:
+		other_program = getContractProgram(
+			trade.secret_hash,
+			other_trade_currency.total_amount,
+			other_trade_currency.fee,
+			other_trade_currency.from_address,
+			other_trade_currency.to_address,
+			other_trade_currency.max_block_height
+		)
+		otherProgramPuzzleHash = programToPuzzleHash(program)
+		other_coin_record = full_node_client.getContractCoinRecord(otherProgramPuzzleHash.hex(), height - 7 - other_trade_currency.max_block_height)
+		if other_coin_record == False:
+			shouldCancel = True
+		else:
+			other_coin_block_index = other_coin_record['confirmed_block_index']
+	
 	height = full_node_client.getBlockchainHeight()
 	contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 7 - trade_currency.max_block_height)
-	while contract_coin_record == False:
+	while contract_coin_record == False and shouldCancel == False:
 		time.sleep(60)
-		contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 7 - trade_currency.max_block_height)
+		height = full_node_client.getBlockchainHeight()
+		if other_trade_currency is not None:
+			if height - other_coin_block_index > other_trade_currency.max_block_height - other_trade_currency.min_confirmation_height * 2 - 25:
+				shouldCancel = True
+		if not shouldCancel:
+			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 7 - trade_currency.max_block_height)
+
 
 	trade_threads_files[trade_index].write(f"Contract coin record: {contract_coin_record}\n")
 	trade_threads_files[trade_index].flush()
@@ -178,7 +201,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 	trade_threads_addresses[trade_index] = None
 
 	time.sleep(3)
-	return contract_coin_record
+	return shouldCancel, contract_coin_record
 
 def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, coin_record):
 	global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files
@@ -395,7 +418,7 @@ def tradeCode(trade_id):
 	coming_from_step_0 = False
 
 	if trade.step == 0:
-		coin_record_one = tradeWaitForContract(trade_index, trade, trade_currency_one, currency_one, trade.is_buyer, True)
+		shouldCancel, coin_record_one = tradeWaitForContract(trade_index, trade, trade_currency_one, currency_one, trade.is_buyer, True)
 
 		s = trades.update().where(trades.c.id == trade_id).values(step = 1)
 		conn.execute(s)
@@ -404,7 +427,7 @@ def tradeCode(trade_id):
 		coming_from_step_0 = True
 
 	if trade.step == 1:
-		coin_record_two = tradeWaitForContract(trade_index, trade, trade_currency_two, currency_two, not trade.is_buyer, coming_from_step_0)
+		shouldCancel, coin_record_two = tradeWaitForContract(trade_index, trade, trade_currency_two, currency_two, not trade.is_buyer, coming_from_step_0, trade_currency_one)
 
 		s = trades.update().where(trades.c.id == trade_id).values(step = 2)
 		conn.execute(s)
