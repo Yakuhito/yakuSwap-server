@@ -424,6 +424,8 @@ def tradeCode(trade_id):
 	coin_record_two = False
 	coming_from_step_0 = False
 
+	shouldCancel = False
+
 	if trade.step == 0:
 		shouldCancel, coin_record_one = tradeWaitForContract(trade_index, trade, trade_currency_one, currency_one, trade.is_buyer, True)
 
@@ -453,6 +455,7 @@ def tradeCode(trade_id):
 				coin_record_one, cancelTrade = shouldCancelTrade(trade_index, trade, trade_currency_one, currency_one, coin_record_one)
 
 		trade_threads_files[trade_index].write(f"Cancel trade: {cancelTrade}\n")
+		trade_threads_files[trade_index].flush()
 		if cancelTrade:
 			solution_program = getSolutionProgram("CANCEL-" + str(random.SystemRandom().getrandbits(128))).as_bin().hex()
 			if trade.is_buyer:
