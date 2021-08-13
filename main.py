@@ -154,6 +154,8 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 	if wait:
 		time.sleep(180)
 
+	height = full_node_client.getBlockchainHeight()
+
 	shouldCancel = False
 	if other_trade_currency is not None:
 		other_program = getContractProgram(
@@ -171,7 +173,6 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		else:
 			other_coin_block_index = other_coin_record['confirmed_block_index']
 	
-	height = full_node_client.getBlockchainHeight()
 	contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 7 - trade_currency.max_block_height)
 	while contract_coin_record == False and shouldCancel == False:
 		time.sleep(60)
