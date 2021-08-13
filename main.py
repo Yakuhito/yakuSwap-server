@@ -117,7 +117,7 @@ trade_threads_messages = []
 trade_threads_addresses = []
 trade_threads_files = []
 
-def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_contract, wait = False, other_trade_currency = None):
+def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_contract, wait = False, other_trade_currency = False):
 	global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files
 
 	program = getContractProgram(
@@ -157,7 +157,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 	height = full_node_client.getBlockchainHeight()
 
 	shouldCancel = False
-	if other_trade_currency is not None:
+	if other_trade_currency != False:
 		other_program = getContractProgram(
 			trade.secret_hash,
 			other_trade_currency.total_amount,
@@ -177,7 +177,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 	while contract_coin_record == False and shouldCancel == False:
 		time.sleep(60)
 		height = full_node_client.getBlockchainHeight()
-		if other_trade_currency is not None:
+		if other_trade_currency != False:
 			if height - other_coin_block_index > other_trade_currency.max_block_height - other_trade_currency.min_confirmation_height * 2 - 25:
 				shouldCancel = True
 		if not shouldCancel:
