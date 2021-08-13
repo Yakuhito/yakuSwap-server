@@ -445,11 +445,12 @@ def tradeCode(trade_id):
 		trade_threads_messages[trade_index] = "Starting last step..."
 		trade_threads_addresses[trade_index] = None
 
-		cancelTrade = False
-		if trade.is_buyer:
-			coin_record_two, cancelTrade = shouldCancelTrade(trade_index, trade, trade_currency_two, currency_two, coin_record_two)
-		else:
-			coin_record_one, cancelTrade = shouldCancelTrade(trade_index, trade, trade_currency_one, currency_one, coin_record_one)
+		cancelTrade = shouldCancel
+		if not cancelTrade:
+			if trade.is_buyer:
+				coin_record_two, cancelTrade = shouldCancelTrade(trade_index, trade, trade_currency_two, currency_two, coin_record_two)
+			else:
+				coin_record_one, cancelTrade = shouldCancelTrade(trade_index, trade, trade_currency_one, currency_one, coin_record_one)
 
 		trade_threads_files[trade_index].write(f"Cancel trade: {cancelTrade}\n")
 		if cancelTrade:
