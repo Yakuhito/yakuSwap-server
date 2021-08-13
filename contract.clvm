@@ -20,7 +20,7 @@
 
 	(if (= (sha256 secret) SECRET_HASH)
 		(list 
-			(list CREATE_COIN YAKUSWAP_ADDRESS (get_exchange_fee))
+			(list CREATE_COIN YAKUSWAP_ADDRESS (get_exchange_fee ))
 			(list CREATE_COIN TO_ADDRESS (- AMOUNT FEE (get_exchange_fee)))
 			(list ASSERT_FEE FEE)
 			(list AGG_SIG_UNSAFE 0xa37901780f3d6a13990bb17881d68673c64e36e5f0ae02922afe9b3743c1935765074d237507020c3177bd9476384a37 "yakuhito")
