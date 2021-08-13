@@ -4,6 +4,7 @@ from bech32m import decode_puzzle_hash, encode_puzzle_hash
 from helper import bytes32
 from clvm.SExp import SExp
 from clvm_tools.clvmc import compile_clvm_text
+from clvm_tools.curry import curry
 from clvm_tools.sha256tree import sha256tree
 from config import debug
 
@@ -35,18 +36,15 @@ def getContractProgram(secret_hash: str, total_amount: int, fee: int, from_addre
 	from_address = getPuzzleHashFromAddress(from_address)
 	
 	contract = open("contract.clvm", "r").read()
-	contract = contract.replace("REPLACE_WITH_SECRET_HASH", secret_hash)
-	contract = contract.replace("REPLACE_WITH_AMOUNT", amount)
-	contract = contract.replace("REPLACE_WITH_FEE", fee)
-	contract = contract.replace("REPLACE_WITH_FROM_ADDRESS", from_address)
-	contract = contract.replace("REPLACE_WITH_TO_ADDRESS", to_address)
-	contract = contract.replace("REPLACE_WITH_YAKUSWAP_ADDRESS", yakuswap_address)
-	contract = contract.replace("REPLACE_WITH_MAX_BLOCK_HEIGHT", max_block_height)
 	if debug:
 		print(contract)
 
-	ret = compile_clvm_text(contract, []) # .as_bin().hex()
+	prog_to_curry = compile_clvm_text(contract, []) # .as_bin().hex()
+	curry_args = compile_clvm_text(f"(list {secret_hash} {amount} {fee} {from_address} {to_address} {yakuswap_address} {max_block_height})", [])
+	ret = curry(prog_to_curry, curry_args)[-1]
 	cache[cache_id] = ret
+
+	print(ret)
 
 	return ret
 
