@@ -71,7 +71,12 @@ class FullNodeClient():
 				"aggregated_signature": "0x8b026520c973f153c62345b181ed17efd47f77e657ed003d084ef53099f89ba00e22fc1c2a8bf68502a975561b77dfa8133eb3c57ab788bf684b0afc0642ac53fc8d108d69a2815724d8bda220e613eaa360ab0f756438e5ca61948c7ec15249",
 			}
 		})
-		return resp != {} and resp["success"]
+		if resp == {} or not resp["success"]:
+			return False
+		if resp["status"] == "SUCCESS":
+			return True
+		return "pending"
+		
 
 	def getCoinSolution(self, coinId, height):
 		resp = self._makeRequest("/get_puzzle_and_solution", {

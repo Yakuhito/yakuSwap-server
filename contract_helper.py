@@ -16,14 +16,14 @@ def getAddressFromPuzzleHash(puzzleHash: bytes32, prefix: str) -> str:
 
 cache = {}
 
-def getContractProgram(secret_hash: str, total_amount: int, fee: int, from_address: str, to_address: str, max_block_height: int) -> SExp:
+def getContractProgram(secret_hash: str, total_amount: int, fee: int, from_address: str, to_address: str, max_block_height: int, currency_min_fee: int) -> SExp:
 	cache_id = f"{secret_hash}{total_amount}{fee}{from_address}{to_address}{max_block_height}"
 	if not secret_hash.startswith("0x"):
 		secret_hash = "0x" + secret_hash
 	if cache.get(cache_id, -1) != -1:
 		return cache[cache_id]
 
-	amount = str(total_amount - fee)
+	amount = str(total_amount - currency_min_fee)
 	fee = str(fee)
 	max_block_height = str(max_block_height)
 	# first, huge thanks to all those who left the yakuswap_address variable unchanged
