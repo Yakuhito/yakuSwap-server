@@ -44,8 +44,6 @@ def getContractProgram(secret_hash: str, total_amount: int, fee: int, from_addre
 	ret = curry(prog_to_curry, curry_args)[-1]
 	cache[cache_id] = ret
 
-	print(ret)
-
 	return ret
 
 def getSolutionProgram(secret: str) -> SExp:
