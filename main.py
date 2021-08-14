@@ -141,7 +141,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		trade_threads_files[trade_index]
 	)
 
-	amount_to_send = trade_currency.total_amount - trade_currency.fee
+	amount_to_send = trade_currency.total_amount - currency.min_fee
 	amount_to_send = amount_to_send / currency.units_per_coin
 	fee = trade_currency.fee / currency.units_per_coin
 	first_transacrion_fee = currency.min_fee / currency.units_per_coin
@@ -187,7 +187,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 7 - trade_currency.max_block_height)
 
 
-	if shouldCancel == False and contract_coin_record["coin"]["amount"] != trade_currency.total_amount - trade_currency.fee:
+	if shouldCancel == False and contract_coin_record["coin"]["amount"] != trade_currency.total_amount - currency.min_fee:
 		trade_threads_files[trade_index].write(f"Trickster detected!\n")
 		trade_threads_files[trade_index].flush()
 		shouldCancel = True
