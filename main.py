@@ -169,7 +169,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 			other_trade_currency.max_block_height,
 			other_currency.min_fee,
 		)
-		otherProgramPuzzleHash = programToPuzzleHash(program)
+		otherProgramPuzzleHash = programToPuzzleHash(other_program)
 		other_coin_record = full_node_client.getContractCoinRecord(otherProgramPuzzleHash.hex(), height - 7 - other_trade_currency.max_block_height)
 		if other_coin_record == False:
 			shouldCancel = True
