@@ -12,7 +12,6 @@
 	(defconstant CREATE_COIN 51)
 	(defconstant ASSERT_HEIGHT_RELATIVE 82)
 	(defconstant ASSERT_FEE 52)
-	(defconstant AGG_SIG_UNSAFE 49)
 
 	(defun-inline get_exchange_fee () 
 		(+ (f (divmod (* 7 (- AMOUNT FEE)) 1000)) 1)
@@ -23,13 +22,11 @@
 			(list CREATE_COIN YAKUSWAP_ADDRESS (get_exchange_fee))
 			(list CREATE_COIN TO_ADDRESS (- AMOUNT FEE (get_exchange_fee)))
 			(list ASSERT_FEE FEE)
-			(list AGG_SIG_UNSAFE 0xa37901780f3d6a13990bb17881d68673c64e36e5f0ae02922afe9b3743c1935765074d237507020c3177bd9476384a37 "yakuhito")
 		)
 		(list
 			(list CREATE_COIN FROM_ADDRESS (- AMOUNT FEE))
 			(list ASSERT_FEE FEE)
 			(list ASSERT_HEIGHT_RELATIVE MAX_BLOCK_HEIGHT)
-			(list AGG_SIG_UNSAFE 0xa37901780f3d6a13990bb17881d68673c64e36e5f0ae02922afe9b3743c1935765074d237507020c3177bd9476384a37 "yakuhito")
 		)
 	)
 )
