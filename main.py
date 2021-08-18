@@ -126,8 +126,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		trade_currency.fee,
 		trade_currency.from_address,
 		trade_currency.to_address,
-		trade_currency.max_block_height,
-		currency.min_fee
+		trade_currency.max_block_height
 	)
 	programPuzzleHash = programToPuzzleHash(program)
 	programAddress = getAddressFromPuzzleHash(programPuzzleHash, currency.address_prefix)
@@ -141,16 +140,15 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		trade_threads_files[trade_index]
 	)
 
-	amount_to_send = trade_currency.total_amount - currency.min_fee
+	amount_to_send = trade_currency.total_amount - trade_currency.fee
 	amount_to_send = amount_to_send / currency.units_per_coin
 	fee = trade_currency.fee / currency.units_per_coin
-	first_transacrion_fee = currency.min_fee / currency.units_per_coin
-
+	
 	if issue_contract:
-		trade_threads_messages[trade_index] = f"Please send {amount_to_send:.12f} {currency.name} with a fee of {first_transacrion_fee:.12f} {currency.name} to the address found below. Double-check the address before confirming the transaction - if it's wrong, your coins will be lost."
+		trade_threads_messages[trade_index] = f"Please send {amount_to_send:.12f} {currency.name} with a fee of {fee:.12f} {currency.name} to the address found below. Double-check the address before confirming the transaction - if it's wrong, your coins will be lost."
 		trade_threads_addresses[trade_index] = programAddress
 	else:
-		trade_threads_messages[trade_index] = f"Waiting for the other human to send {amount_to_send:.12f} {currency.name} with a fee of {first_transacrion_fee:.12f} {currency.name} to the address found below..."
+		trade_threads_messages[trade_index] = f"Waiting for the other human to send {amount_to_send:.12f} {currency.name} with a fee of {fee:.12f} {currency.name} to the address found below..."
 		trade_threads_addresses[trade_index] = programAddress
 
 	if wait:
@@ -166,8 +164,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 			other_trade_currency.fee,
 			other_trade_currency.from_address,
 			other_trade_currency.to_address,
-			other_trade_currency.max_block_height,
-			other_currency.min_fee,
+			other_trade_currency.max_block_height
 		)
 		otherProgramPuzzleHash = programToPuzzleHash(other_program)
 
@@ -199,7 +196,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 1000 - trade_currency.max_block_height)
 
 
-	if shouldCancel == False and contract_coin_record["coin"]["amount"] != trade_currency.total_amount - currency.min_fee:
+	if shouldCancel == False and contract_coin_record["coin"]["amount"] != trade_currency.total_amount - trade_currency.fee:
 		trade_threads_files[trade_index].write(f"Trickster detected!\n")
 		trade_threads_files[trade_index].flush()
 		shouldCancel = True
@@ -221,13 +218,13 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 			delta = height - confirmed_block_index
 			trade_threads_messages[trade_index] = f"Waiting for transaction confirmation ({delta} / {trade_currency.min_confirmation_height})"
 			trade_threads_addresses[trade_index] = None
-			time.sleep(15)
+			time.sleep(10)
 			height = full_node_client.getBlockchainHeight()
 
 		trade_threads_messages[trade_index] = "Commencing to next step..."
 		trade_threads_addresses[trade_index] = None
 
-	time.sleep(3)
+	time.sleep(5)
 	return shouldCancel, contract_coin_record
 
 def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, coin_record):
@@ -239,8 +236,7 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 		trade_currency.fee,
 		trade_currency.from_address,
 		trade_currency.to_address,
-		trade_currency.max_block_height,
-		currency.min_fee
+		trade_currency.max_block_height
 	)
 	programPuzzleHash = programToPuzzleHash(program).hex()
 
@@ -304,8 +300,7 @@ def tradeClaimContract(trade_index, trade, trade_currency, currency, solution_pr
 		trade_currency.fee,
 		trade_currency.from_address,
 		trade_currency.to_address,
-		trade_currency.max_block_height,
-		currency.min_fee
+		trade_currency.max_block_height
 	)
 	programPuzzleHash = programToPuzzleHash(program).hex()
 	trade_threads_files[trade_index].write(f"tradeClaimContract - contract with puzzlehash {programPuzzleHash}\n")
@@ -370,8 +365,7 @@ def shouldCancelTrade(trade_index, trade, trade_currency, currency, coin_record)
 		trade_currency.fee,
 		trade_currency.from_address,
 		trade_currency.to_address,
-		trade_currency.max_block_height,
-		currency.min_fee
+		trade_currency.max_block_height
 	)
 	programPuzzleHash = programToPuzzleHash(program).hex()
 	trade_threads_files[trade_index].write(f"Contract with puzzlehash {programPuzzleHash}\n")
