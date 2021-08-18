@@ -284,13 +284,15 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 		trade_threads_messages[trade_index] = "Getting contract coin record..."
 		height = full_node_client.getBlockchainHeight()
 		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 1000 - trade_currency.max_block_height, True)
-	
+		if coin_record['confirmed_block_index'] - height > trade_currency.max_block_height * 2 // 3:
+			return False
+
 	trade_threads_files[trade_index].write(f"Coin record: {coin_record}\n")
 	trade_threads_files[trade_index].flush()
 
 	if coin_record == False:
 		trade_threads_messages[trade_index] = "Something really strange happened..."
-		return
+		return False
 
 	trade_threads_messages[trade_index] = "Getting contract solution..."
 	spent_block_index = coin_record["spent_block_index"]
@@ -526,7 +528,10 @@ def tradeCode(trade_id):
 				tradeClaimContract(trade_index, trade, trade_currency_two, currency_two, solution_program, coin_record_two)
 			else:
 				solution_program = lookForSolutionInBlockchain(trade_index, trade, trade_currency_two, currency_two, coin_record_two)
-				tradeClaimContract(trade_index, trade, trade_currency_one, currency_one, solution_program, coin_record_one)
+				if solution_program == False:
+					tradeClaimContract(trade_index, trade, trade_currency_two, currency_two, solution_program, coin_record_two, True)
+				else:
+					tradeClaimContract(trade_index, trade, trade_currency_one, currency_one, solution_program, coin_record_one)
 
 	conn.close()
 
