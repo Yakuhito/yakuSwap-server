@@ -7,6 +7,7 @@ from contract_helper import getAddressFromPuzzleHash, getContractProgram, progra
 from full_node_client import FullNodeClient
 from helper import bytes32
 from clvm.casts import int_from_bytes, int_to_bytes
+from math import ceil
 import random
 import blspy
 import threading
@@ -219,7 +220,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		height = full_node_client.getBlockchainHeight()
 		if other_trade_currency != False:
 			other_height = other_full_node_client.getBlockchainHeight()
-			if other_height - other_coin_block_index > other_trade_currency.max_block_height - 50:
+			if other_height - other_coin_block_index > other_trade_currency.max_block_height * 2 // 3 - ceil(trade_currency.min_confirmation_height * trade_currency.max_block_height / other_trade_currency.max_block_height):
 				shouldCancel = True
 		if not shouldCancel:
 			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 1000 - trade_currency.max_block_height)
@@ -424,7 +425,7 @@ def shouldCancelTrade(trade_index, trade, trade_currency, currency, coin_record)
 	
 	cancel = False
 
-	if height - coin_record['confirmed_block_index'] > trade_currency.max_block_height - 50:
+	if height - coin_record['confirmed_block_index'] > trade_currency.max_block_height * 2 // 3:
 		cancel = True
 
 	return coin_record, cancel
