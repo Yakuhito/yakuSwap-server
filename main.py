@@ -284,8 +284,6 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 		trade_threads_messages[trade_index] = "Getting contract coin record..."
 		height = full_node_client.getBlockchainHeight()
 		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 1000 - trade_currency.max_block_height, True)
-		if coin_record['confirmed_block_index'] - height > trade_currency.max_block_height * 2 // 3:
-			return False
 
 	trade_threads_files[trade_index].write(f"Coin record: {coin_record}\n")
 	trade_threads_files[trade_index].flush()
@@ -302,6 +300,8 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 		height = full_node_client.getBlockchainHeight()
 		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 1000 - trade_currency.max_block_height, True)
 		spent_block_index = coin_record["spent_block_index"]
+		if coin_record['confirmed_block_index'] - height > trade_currency.max_block_height * 2 // 3:
+			return False
 
 	coin = coin_record["coin"]
 	coin_id = std_hash(bytes.fromhex(coin["parent_coin_info"][2:]) + bytes.fromhex(coin["puzzle_hash"][2:]) + int_to_bytes(coin["amount"])).hex()
