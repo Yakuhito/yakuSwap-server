@@ -154,7 +154,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		trade_threads_addresses[trade_index] = programAddress
 
 	if wait:
-		time.sleep(180)
+		time.sleep(120)
 
 	height = full_node_client.getBlockchainHeight()
 
@@ -178,7 +178,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 			trade_threads_files[trade_index]
 		)
 
-		other_coin_record = other_full_node_client.getContractCoinRecord(otherProgramPuzzleHash.hex(), height - 7 - other_trade_currency.max_block_height)
+		other_coin_record = other_full_node_client.getContractCoinRecord(otherProgramPuzzleHash.hex(), height - 1000 - other_trade_currency.max_block_height)
 		if other_coin_record == False:
 			shouldCancel = True
 		else:
@@ -187,16 +187,16 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		trade_threads_files[trade_index].write(f"Other coin record: {other_coin_record}\nShould cancel? {shouldCancel}\n")
 		trade_threads_files[trade_index].flush()
 
-	contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 7 - trade_currency.max_block_height)
+	contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 1000 - trade_currency.max_block_height)
 	while contract_coin_record == False and shouldCancel == False:
 		time.sleep(60)
 		height = full_node_client.getBlockchainHeight()
 		if other_trade_currency != False:
 			other_height = other_full_node_client.getBlockchainHeight()
-			if other_height - other_coin_block_index > other_trade_currency.max_block_height // 3 - other_trade_currency.min_confirmation_height * 2 - 25:
+			if other_height - other_coin_block_index > other_trade_currency.max_block_height - 50 - other_trade_currency.min_confirmation_height:
 				shouldCancel = True
 		if not shouldCancel:
-			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 7 - trade_currency.max_block_height)
+			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 1000 - trade_currency.max_block_height)
 
 
 	if shouldCancel == False and contract_coin_record["coin"]["amount"] != trade_currency.total_amount - currency.min_fee:
@@ -257,7 +257,7 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 	if coin_record == False:
 		trade_threads_messages[trade_index] = "Getting contract coin record..."
 		height = full_node_client.getBlockchainHeight()
-		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 10000 - trade_currency.max_block_height, True)
+		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 1000 - trade_currency.max_block_height, True)
 	
 	trade_threads_files[trade_index].write(f"Coin record: {coin_record}\n")
 	trade_threads_files[trade_index].flush()
@@ -272,7 +272,7 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 	while spent_block_index == 0:
 		time.sleep(15)
 		height = full_node_client.getBlockchainHeight()
-		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 10000 - trade_currency.max_block_height, True)
+		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 1000 - trade_currency.max_block_height, True)
 		spent_block_index = coin_record["spent_block_index"]
 
 	coin = coin_record["coin"]
@@ -348,13 +348,13 @@ def tradeClaimContract(trade_index, trade, trade_currency, currency, solution_pr
 		time.sleep(5)
 	if r == "pending":
 		while r == "pending":
-			trade_threads_messages[trade_index] = "The transaction was marked as PENDING. I'll push it every 15 mins just to make sure."
+			trade_threads_messages[trade_index] = "The transaction was marked as PENDING - I'll push it every 30 seconds just to be sure"
 			r = full_node_client.pushTransaction(
 				program.as_bin().hex(),
 				solution_program_hex,
 				coin
 			)
-			time.sleep(60 * 15)
+			time.sleep(30)
 		trade_threads_messages[trade_index] = "Done! Check your wallet :)"	
 	else:
 		trade_threads_messages[trade_index] = "Done! Check your wallet :)"	
@@ -401,7 +401,7 @@ def shouldCancelTrade(trade_index, trade, trade_currency, currency, coin_record)
 	
 	cancel = False
 
-	if height - coin_record['confirmed_block_index'] > trade_currency.max_block_height // 3 - trade_currency.min_confirmation_height * 2 - 25:
+	if height - coin_record['confirmed_block_index'] > trade_currency.max_block_height - 50:
 		cancel = True
 
 	return coin_record, cancel
