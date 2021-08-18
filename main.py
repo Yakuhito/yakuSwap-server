@@ -42,6 +42,35 @@ class Currencies(Resource):
 		return {'currencies': res}
 
 
+class ConnectionStatus(Resource):
+	def get(self):
+		conn = engine.connect()
+
+		s = currencies.select()
+		result = conn.execute(s)
+		res = []
+
+		for row in result:
+			prefix = row[0]
+			client = FullNodeClient(
+				row[9], # ssl_directory
+				row[7], # host
+				row[8] # port
+			)
+
+			api_resp = client.getBlockchainState()
+			if api_resp.get("blockchain_state", -1) == -1:
+				res.append({"currency": prefix, "status": "not_connected"})
+			else:
+				if api_resp["blockchain_state"]["sync"]["synced"]:
+					res.append({"currency": prefix, "status": "connected"})
+				else:
+					res.append({"currency": prefix, "status": "not_synced"})
+
+		conn.close()
+		return {'connections': res}
+
+
 class Trades(Resource):
 	def get(self):
 		conn = engine.connect()
@@ -593,6 +622,7 @@ class Trade(Resource):
 
 
 api.add_resource(HelloThere, '/')
+api.add_resource(ConnectionStatus, '/connection-status')
 api.add_resource(Currencies, '/currencies')
 api.add_resource(Trades, '/trades')
 api.add_resource(Currency, '/currency/<string:address_prefix>')
