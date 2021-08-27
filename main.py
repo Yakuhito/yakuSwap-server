@@ -23,9 +23,9 @@ def std_hash(b) -> bytes32:
     return bytes32(blspy.Util.hash256(bytes(b)))
 
 
-class HelloThere(Resource):
+class PingService(Resource):
 	def get(self):
-		return {'message': 'Hello there!'}
+		return {'message': 'Pong!'}
 
 
 class Currencies(Resource):
@@ -220,7 +220,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 		height = full_node_client.getBlockchainHeight()
 		if other_trade_currency != False:
 			other_height = other_full_node_client.getBlockchainHeight()
-			if other_height - other_coin_block_index >= other_trade_currency.max_block_height * 2 // 3 - ceil(trade_currency.min_confirmation_height * trade_currency.max_block_height / other_trade_currency.max_block_height):
+			if other_height - other_coin_block_index >= other_trade_currency.max_block_height * 3 // 4 - ceil(trade_currency.min_confirmation_height * trade_currency.max_block_height / other_trade_currency.max_block_height):
 				shouldCancel = True
 		if not shouldCancel:
 			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 1000 - trade_currency.max_block_height)
@@ -322,11 +322,11 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 1000 - trade_currency.max_block_height, True)
 		spent_block_index = coin_record["spent_block_index"]
 		other_height = other_full_node_client.getBlockchainHeight()
-		if other_height - other_coin_record['confirmed_block_index'] >= other_trade_currency.max_block_height * 2 // 3:
+		if other_height - other_coin_record['confirmed_block_index'] >= other_trade_currency.max_block_height * 3 // 4:
 			trade_threads_files[trade_index].write(f"Other currency time ran out. Exiting...")
 			trade_threads_files[trade_index].flush()
 			return False
-		if height - coin_record['confirmed_block_index'] >= trade_currency.max_block_height * 2 // 3:
+		if height - coin_record['confirmed_block_index'] >= trade_currency.max_block_height * 3 // 4:
 			trade_threads_files[trade_index].write(f"Main currency time ran out. Exiting...")
 			trade_threads_files[trade_index].flush()
 			return False
@@ -455,7 +455,7 @@ def shouldCancelTrade(trade_index, trade, trade_currency, currency, coin_record)
 	
 	cancel = False
 
-	if height - coin_record['confirmed_block_index'] >= trade_currency.max_block_height * 2 // 3:
+	if height - coin_record['confirmed_block_index'] >= trade_currency.max_block_height * 3 // 4:
 		cancel = True
 
 	return coin_record, cancel
@@ -655,7 +655,7 @@ class Trade(Resource):
 		return {'success': True}
 
 
-api.add_resource(HelloThere, '/')
+api.add_resource(PingService, '/ping')
 api.add_resource(ConnectionStatus, '/connection-status')
 api.add_resource(Currencies, '/currencies')
 api.add_resource(Trades, '/trades')
