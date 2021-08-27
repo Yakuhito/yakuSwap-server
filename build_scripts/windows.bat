@@ -22,6 +22,6 @@ pyinstaller -F main.py
 
 echo make windows package
 mkdir dist\windows
-move dist\main.exe dist\windows\yakuSwap-server.exe
+move dist\main.exe dist\windows\yakuSwap.exe
 copy contract.clvm dist\windows\contract.clvm
 

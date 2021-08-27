@@ -24,6 +24,6 @@ pyinstaller -F main.py
 
 # package
 mkdir dist/linux
-mv dist/main dist/linux/yakuSwap-server
+mv dist/main dist/linux/yakuSwap
 cp contract.clvm dist/linux/contract.clvm
 
