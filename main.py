@@ -1,4 +1,5 @@
 from flask import Flask, send_from_directory
+from flask_cors import CORS
 from flask_restful import Resource, Api, reqparse, abort
 from config import debug
 from db import currencies, trade_currencies, trades, engine
@@ -13,7 +14,8 @@ import blspy
 import threading
 import time
 
-app = Flask("yakuSwap API")
+app = Flask("yakuSwap")
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 api = Api(app)
 
 def std_hash(b) -> bytes32:
