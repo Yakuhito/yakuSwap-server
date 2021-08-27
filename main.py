@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_restful import Resource, Api, reqparse, abort
 from config import debug
 from db import currencies, trade_currencies, trades, engine
@@ -655,12 +655,17 @@ class Trade(Resource):
 		return {'success': True}
 
 
-api.add_resource(PingService, '/ping')
-api.add_resource(ConnectionStatus, '/connection-status')
-api.add_resource(Currencies, '/currencies')
-api.add_resource(Trades, '/trades')
-api.add_resource(Currency, '/currency/<string:address_prefix>')
-api.add_resource(Trade, '/trade/<string:trade_id>')
+api.add_resource(PingService, '/api/ping')
+api.add_resource(ConnectionStatus, '/api/connection-status')
+api.add_resource(Currencies, '/api/currencies')
+api.add_resource(Trades, '/api/trades')
+api.add_resource(Currency, '/api/currency/<string:address_prefix>')
+api.add_resource(Trade, '/api/trade/<string:trade_id>')
+
+@app.route('/', defaults={'path': 'index.html'})
+@app.route('/<path:path>')
+def get_resource(path):
+	return send_from_directory('html', path)
 
 if __name__ == '__main__':
 	app.run(host='127.0.0.1', port=4143, debug=debug)
