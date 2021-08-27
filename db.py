@@ -85,6 +85,7 @@ def guessSslDirFor(currencyName):
 addCurrency('xch', 'Chia', 'https://raw.githubusercontent.com/Chia-Network/chia-blockchain-gui/main/src/assets/img/chia_circle.svg', 1000000000000, 1, 150, 10, '127.0.0.1', 8555, guessSslDirFor("Chia"))
 addCurrency('xfx', 'Flax', 'https://raw.githubusercontent.com/Flax-Network/flax-blockchain-gui/main/src/assets/img/flax_circle.svg', 1000000000000, 1, 150, 25, '127.0.0.1', 6755, guessSslDirFor("Flax"))
 addCurrency('cgn', 'Chaingreen', 'https://raw.githubusercontent.com/ChainGreenOrg/chaingreen-blockchain-gui/main/src/assets/img/chia_circle.svg', 1000000000000, 1, 150, 32, '127.0.0.1', 8855, guessSslDirFor("Chaingreen"))
+addCurrency('xcc', 'Chives', 'https://raw.githubusercontent.com/HiveProject2021/chives-blockchain-gui/main/src/assets/img/chives_circle.svg', 100000000, 1, 150, 32, '127.0.0.1', 9755, guessSslDirFor("Chives"))
 addCurrency('spare', 'Spare', 'https://raw.githubusercontent.com/Spare-Network/spare-blockchain/master/spare-blockchain-gui/src/assets/img/spare.ico', 1000000000000, 1, 150, 32, '127.0.0.1', 9555, guessSslDirFor("spare-blockchain"))
 addCurrency('xfl', 'Flora', 'https://raw.githubusercontent.com/Flora-Network/flora-blockchain-gui/main/src/assets/img/flora_circle.png', 1000000000000, 1, 150, 32, '127.0.0.1', 18755, guessSslDirFor("Flora"))
 addCurrency('xdg', 'DogeChia', 'https://raw.githubusercontent.com/DogeChia/dogechia-blockchain-gui/main/src/assets/img/dogechia.png', 1000000000000, 1, 150, 32, '127.0.0.1', 6769, guessSslDirFor("DogeChia"))
