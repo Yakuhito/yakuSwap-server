@@ -1,4 +1,6 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, BigInteger, String, ForeignKey, Boolean
+from sqlalchemy import create_engine, MetaData, Table, Column, String, ForeignKey, Boolean
+from sqlalchemy.dialects.mysql import INTEGER as Integer
+from sqlalchemy.dialects.mysql import BIGINT as BigInteger
 from config import debug
 from pathlib import Path
 import os
@@ -24,12 +26,12 @@ trade_currencies = Table(
 	'trade_currencies', meta,
 	Column('id', String, primary_key = True),
 	Column('address_prefix', String, ForeignKey('currencies.address_prefix')),
-	Column('fee', BigInteger),
-	Column('max_block_height', Integer),
-	Column('min_confirmation_height', Integer),
+	Column('fee', BigInteger(unsigned=True)),
+	Column('max_block_height', Integer(unsigned=True)),
+	Column('min_confirmation_height', Integer(unsigned=True)),
 	Column('from_address', String),
 	Column('to_address', String),
-	Column('total_amount', BigInteger), # includes 2 * fee
+	Column('total_amount', BigInteger(unsigned=True)), # includes 2 * fee
 )
 
 trades = Table(
@@ -40,7 +42,20 @@ trades = Table(
 	Column('secret_hash', String),
 	Column('is_buyer', Boolean),
 	Column('secret', String),
-	Column('step', Integer),
+	Column('step', Integer(unsigned=True)),
+)
+
+eth_trades = Table(
+	'eth_trades', meta,
+	Column('id', String, primary_key = True),
+	Column('trade_currency', String, ForeignKey('trade_currencies.id')),
+	Column('eth_from_address', String),
+	Column('eth_to_address', String),
+	Column('total_wei', BigInteger(unsigned=True)), # excluding transaction fees
+	Column('secret_hash', String),
+	Column('is_buyer', Boolean),
+	Column('secret', String),
+	Column('step', Integer(unsigned=True)),
 )
 
 meta.create_all(engine)

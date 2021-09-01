@@ -31,10 +31,23 @@ def tradeCurrencyRowToJson(row):
 def tradesRowToJson(row, tradeCurrencyOneRow, tradeCurrencyTwoRow):
 	return {
 		'id': row[0],
-		'trade_currency_one': tradeCurrencyRowToJson(tradeCurrencyOneRow), # row[1]
-		'trade_currency_two': tradeCurrencyRowToJson(tradeCurrencyTwoRow), # row[2]
+		'trade_currency_one': tradeCurrencyOneRow, # tradeCurrencyRowToJson(tradeCurrencyOneRow), # row[1]
+		'trade_currency_two': tradeCurrencyTwoRow, # tradeCurrencyRowToJson(tradeCurrencyTwoRow), # row[2]
 		'secret_hash': row[3],
 		'is_buyer': row[4],
 		'secret': row[5],
 		'step': row[6]
+	}
+
+def ethTradesRowToJson(row, tradeCurrency):
+	return {
+		'id': row[0],
+		'trade_currency': tradeCurrencyRowToJson(tradeCurrency), # row[1]
+		'eth_from_address': row[2],
+		'eth_to_address': row[3],
+		'total_wei': row[4],
+		'secret_hash': row[5],
+		'is_buyer': row[6],
+		'secret': row[7],
+		'step': row[8]
 	}

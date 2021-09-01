@@ -2,8 +2,8 @@ from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_restful import Resource, Api, reqparse, abort
 from config import debug
-from db import currencies, trade_currencies, trades, engine
-from utils import currencyRowToJson, tradesRowToJson, tradeCurrencyRowToJson
+from db import currencies, trade_currencies, trades, eth_trades, engine
+from utils import *
 from contract_helper import getAddressFromPuzzleHash, getContractProgram, programToPuzzleHash, getSolutionProgram
 from full_node_client import FullNodeClient
 from helper import bytes32
@@ -13,6 +13,8 @@ import random
 import blspy
 import threading
 import time
+
+ETH_CONTRACT_ADDRESS = "0x43e0b87d84A560782EF0215B67eA76C6B6D18c87"
 
 app = Flask("yakuSwap")
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -148,6 +150,7 @@ trade_threads_ids = []
 trade_threads_messages = []
 trade_threads_addresses = []
 trade_threads_files = []
+trade_threads_commands = []
 
 def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_contract, wait = False, other_trade_currency = False, other_currency = False):
 	global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files
@@ -567,13 +570,14 @@ def tradeCode(trade_id):
 
 class Trade(Resource):
 	def get(self, trade_id):
-		global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files
+		global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files, trade_threads_commands
 		if not trade_id in trade_threads_ids:
 			t = threading.Thread(target=tradeCode, args=(trade_id, ))
 			trade_threads_ids.append(trade_id)
 			trade_threads_messages.append("Starting thread...")
 			trade_threads_addresses.append(None)
 			trade_threads_files.append(open(f"{trade_id}-log.txt", "a+"))
+			trade_threads_commands.append(None)
 			t.start()
 
 		index = 0
@@ -656,6 +660,139 @@ class Trade(Resource):
 		conn.close()
 		return {'success': True}
 
+eth_address = None
+class EthAddress(Resource):
+	def get(self):
+		if eth_address is None:
+			return {"address": eth_address}
+
+	def put(self):
+		parser = reqparse.RequestParser()
+		parser.add_argument('address', type=str, required=True)
+
+		args = parser.parse_args(strict=True)
+
+		eth_address = args['address']
+
+		return {'success': True}
+
+
+class EthTrades(Resource):
+	def get(self):
+		conn = engine.connect()
+
+		s = eth_trades.select()
+		result = conn.execute(s)
+		res = []
+
+		for row in result:
+			stmt = trade_currencies.select().where(trade_currencies.c.id == row[1])
+			trade_currency = conn.execute(stmt).all()[0]
+
+			res.append(ethTradesRowToJson(row, tradeCurrencyRowToJson(trade_currency)))
+
+		conn.close()
+		return {'trades': res}
+
+def ethTradeCode(trade_id):
+	pass
+
+class EthTrade(Resource):
+	def get(self, trade_id):
+		global trade_threads_ids, etrade_threads_messages, trade_threads_addresses, trade_threads_commands, trade_threads_files
+		if not trade_id in trade_threads_ids:
+			t = threading.Thread(target=ethTradeCode, args=(trade_id, ))
+			trade_threads_ids.append(trade_id)
+			trade_threads_messages.append("Starting thread...")
+			trade_threads_addresses.append(None)
+			trade_threads_commands.append(None)
+			trade_threads_files.append(open(f"{trade_id}-ETH-log.txt", "a+"))
+			t.start()
+
+		index = 0
+		for i, v in enumerate(trade_threads_ids):
+			if v == trade_id:
+				index = i
+		return {
+			"message": trade_threads_messages[index],
+			"address": trade_threads_addresses[index],
+			"command": trade_threads_commands[index]
+		}
+
+	def addTradeCurrency(self, engine, data):
+		conn = engine.connect()
+
+		s = trade_currencies.select().where(trade_currencies.c.id == data['id'])
+		result = conn.execute(s)
+		st = None
+		if len(result.all()) == 0:
+			st = trade_currencies.insert()
+		else:
+			st = trade_currencies.update().where(trade_currencies.c.id == data['id'])
+		st = st.values(
+			id = data['id'],
+			address_prefix = data['address_prefix'],
+			fee = data['fee'],
+			max_block_height = data['max_block_height'],
+			min_confirmation_height = data['min_confirmation_height'],
+			from_address = data['from_address'],
+			to_address = data['to_address'],
+			total_amount = data['total_amount']
+		)
+		conn.execute(st)
+
+		conn.close()
+
+	def put(self, trade_id):
+		parser = reqparse.RequestParser()
+		parser.add_argument('trade_currency', type=dict, required=True)
+		parser.add_argument('eth_from_address', type=str, required=True)
+		parser.add_argument('eth_to_address', type=str, required=True)
+		parser.add_argument('total_wei', type=int, required=True)
+		parser.add_argument('secret', type=str, required=True)
+		parser.add_argument('secret_hash', type=str, required=True)
+		parser.add_argument('is_buyer', type=bool, required=True)
+		parser.add_argument('secret', type=str, required=True)
+		parser.add_argument('step', type=int, required=True)
+
+		args = parser.parse_args(strict=True)
+
+		self.addTradeCurrency(engine, args['trade_currency'])
+
+		conn = engine.connect()
+
+		s = eth_trades.select().where(eth_trades.c.id == trade_id)
+		result = conn.execute(s)
+		st = None
+		if len(result.all()) == 0:
+			st = eth_trades.insert()
+		else:
+			st = eth_trades.update().where(eth_trades.c.id == trade_id)
+		st = st.values(
+			id = trade_id,
+			trade_currency = args['trade_currency']['id'],
+			eth_from_address = args['eth_from_address'],
+			eth_to_address = args['eth_to_address'],
+			total_wei = args['total_wei'],
+			secret_hash = args['secret_hash'],
+			is_buyer = args['is_buyer'],
+			secret = args['secret'],
+			step = args['step'],
+		)
+		conn.execute(st)
+
+		conn.close()
+		return {'success': True}
+
+	def delete(self, trade_id):
+		conn = engine.connect()
+
+		stmt = eth_trades.delete().where(eth_trades.c.id == trade_id)
+		conn.execute(stmt)
+
+		conn.close()
+		return {'success': True}
+
 
 api.add_resource(PingService, '/api/ping')
 api.add_resource(ConnectionStatus, '/api/connection-status')
@@ -663,6 +800,9 @@ api.add_resource(Currencies, '/api/currencies')
 api.add_resource(Trades, '/api/trades')
 api.add_resource(Currency, '/api/currency/<string:address_prefix>')
 api.add_resource(Trade, '/api/trade/<string:trade_id>')
+api.add_resource(EthAddress, '/api/eth/address')
+api.add_resource(EthTrades, '/api/eth/trades')
+api.add_resource(EthTrade, '/api/eth/trade/<string:trade_id>')
 
 @app.route('/', defaults={'path': 'index.html'})
 @app.route('/<path:path>')
