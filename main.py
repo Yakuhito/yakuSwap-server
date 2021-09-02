@@ -13,8 +13,12 @@ import random
 import blspy
 import threading
 import time
+import json
 
-ETH_CONTRACT_ADDRESS = "0x43e0b87d84A560782EF0215B67eA76C6B6D18c87"
+# Hardhat local network
+ETH_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+ETH_MAX_BLOCK_HEIGHT = 256
+ETH_REQUIRED_CONFIRMATIONS = 40
 
 app = Flask("yakuSwap")
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -152,7 +156,7 @@ trade_threads_addresses = []
 trade_threads_files = []
 trade_threads_commands = []
 
-def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_contract, wait = False, other_trade_currency = False, other_currency = False):
+def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_contract, wait = False, other_trade_currency = False, other_currency = False, checkFunc = False):
 	global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files
 
 	program = getContractProgram(
@@ -227,6 +231,8 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 			other_height = other_full_node_client.getBlockchainHeight()
 			if other_height - other_coin_block_index >= other_trade_currency.max_block_height * 3 // 4 - ceil(trade_currency.min_confirmation_height * trade_currency.max_block_height / other_trade_currency.max_block_height):
 				shouldCancel = True
+		if checkFunck != False and checkFunc():
+			shouldCancel = True
 		if not shouldCancel:
 			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 1000 - trade_currency.max_block_height)
 
@@ -660,23 +666,6 @@ class Trade(Resource):
 		conn.close()
 		return {'success': True}
 
-eth_address = None
-class EthAddress(Resource):
-	def get(self):
-		if eth_address is None:
-			return {"address": eth_address}
-
-	def put(self):
-		parser = reqparse.RequestParser()
-		parser.add_argument('address', type=str, required=True)
-
-		args = parser.parse_args(strict=True)
-
-		eth_address = args['address']
-
-		return {'success': True}
-
-
 class EthTrades(Resource):
 	def get(self):
 		conn = engine.connect()
@@ -694,8 +683,178 @@ class EthTrades(Resource):
 		conn.close()
 		return {'trades': res}
 
+eth_trade_responses = {}
+
+def getResponse(trade_id, key, retry=True):
+	global eth_trade_responses
+	if eth_trade_responses.get(trade_id, -1) == -1:
+		eth_trade_responses[trade_id] = {}
+
+	val = eth_trade_responses[trade_id].get(key, -1)
+	while retry and val == -1:
+		time.sleep(1)
+		val = eth_trade_responses[trade_id].get(key, -1)
+
+	if val == -1:
+		return False
+	return val
+
 def ethTradeCode(trade_id):
-	pass
+	global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files, eth_trade_responses
+	global ETH_CONTRACT_ADDRESS, ETH_MAX_BLOCK_HEIGHT, ETH_REQUIRED_CONFIRMATIONS
+	trade_index = 0
+	for i, v in enumerate(trade_threads_ids):
+		if v == trade_id:
+			trade_index = i
+
+	trade_threads_files[trade_index].write("ONLY SHARE THE CONTENTS OF THIS FILE WITH TRUSTED PEOPLE\n")
+
+	conn = engine.connect()
+
+	s = eth_trades.select().where(eth_trades.c.id == trade_id)
+	trade = conn.execute(s).all()[0]
+	trade_threads_files[trade_index].write(f"Trade\n\n")
+	trade_threads_files[trade_index].write(f"Trade id: {trade_id}\n")
+	trade_threads_files[trade_index].write(f"Secret hash: {trade.secret_hash}\n")
+	trade_threads_files[trade_index].write(f"Is Buyer?: {trade.is_buyer}\n")
+	trade_threads_files[trade_index].write(f"Secret: {trade.secret}\n")
+	trade_threads_files[trade_index].write(f"Step: {trade.step}\n\n\n")
+	trade_threads_files[trade_index].flush()
+
+	s = trade_currencies.select().where(trade_currencies.c.id == trade.trade_currency)
+	trade_currency = conn.execute(s).all()[0]
+	trade_threads_files[trade_index].write(f"Trade currency\n\n")
+	_dumpTradeCurrency(trade_index, trade_currency)
+
+	s = currencies.select().where(currencies.c.address_prefix == trade_currency.address_prefix)
+	currency = conn.execute(s).all()[0]
+
+	coin_record = False
+	coming_from_step_0 = False
+
+	shouldCancel = False
+
+	swap_id = "None"
+
+	swap_data = {
+		"contract_address": ETH_CONTRACT_ADDRESS,
+		"secret_hash": trade[5],
+		"from_address": trade[2],
+		"to_address": trade[3],
+		"max_block_height": ETH_MAX_BLOCK_HEIGHT,
+		"amount": trade[4]
+	}
+	if trade.step == 0:
+		trade_threads_addresses[trade_index] = None
+		trade_threads_files[trade_index].write(f"Swap data: {json.dumps(swap_data)}\n\n")
+		trade_threads_files[trade_index].flush()
+
+		if not trade.is_buyer:
+			trade_threads_messages[trade_index] = "Press the button below to create the swap on the Ethereum blockchain"
+			trade_threads_commands[trade_index] = {"code": "CREATE_SWAP", "args": swap_data}
+
+			created = getResponse(trade_id, "swap_created")
+
+		trade_threads_messages[trade_index] = "Waiting for swap to be confirmed on the Ethereum blockchain..."
+		trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
+		
+		swap_id = getResponse(trade_id, "swap_id")
+		confirmations = getResponse(trade_id, "confirmations")
+
+		while confirmations < ETH_REQUIRED_CONFIRMATIONS:
+			trade_threads_messages[trade_index] = f"Confirming swap creation ({confirmations}/{ETH_REQUIRED_CONFIRMATIONS})"
+			confirmations = getResponse(trade_id, "confirmations")
+			time.sleep(5)
+
+		trade_threads_messages[trade_index] = f"Commencing to next step..."
+		trade_threads_commands[trade_index] = None
+
+		shouldCancel = getResponse(trade_id, "should_cancel", False)
+
+		s = trades.update().where(trades.c.id == trade_id).values(step = 1)
+		conn.execute(s)
+		s = trades.select().where(trades.c.id == trade_id)
+		trade = conn.execute(s).all()[0]
+
+		coming_from_step_0 = True
+
+	if trade.step == 1:
+		shouldCancel = shouldCancel or getResponse(trade_id, "should_cancel", False)
+		if not shouldCancel:
+			eth_trade_responses[trade_id][confirmations] = -2
+			trade_threads_messages[trade_index] = f"Starting step 1..."
+			trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
+			while eth_trade_responses[trade_id][confirmations] == -2:
+				time.sleep(1)
+
+			trade_threads_commands[trade_index] = None
+
+			def checkFunc():
+				global eth_trade_responses
+				return eth_trade_responses[trade_id]["confirmations"] < ETH_MAX_BLOCK_HEIGHT * 3 // 4
+			#shouldCancel, coin_record = tradeWaitForContract(trade_index, trade, trade_currency, currency, not trade.is_buyer, False, False, False, checkFunc)
+
+		s = trades.update().where(trades.c.id == trade_id).values(step = 2)
+		conn.execute(s)
+		s = trades.select().where(trades.c.id == trade_id)
+		trade = conn.execute(s).all()[0]
+
+	if trade.step == 2:
+		trade_threads_messages[trade_index] = "Starting last step..."
+		trade_threads_addresses[trade_index] = None
+
+		cancelTrade = shouldCancel or getResponse(trade_id, "should_cancel", False)
+		if not cancelTrade:
+			coin_record, cancelTrade = shouldCancelTrade(trade_index, trade, trade_currency, currency, coin_record)
+			eth_trade_responses[trade_id][confirmations] = -2
+			trade_threads_messages[trade_index] = f"Verifying ETH height..."
+			trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
+			while eth_trade_responses[trade_id]["confirmations"] == -2:
+				time.sleep(1)
+
+			trade_threads_commands[trade_index] = None
+			cancelTrade = cancelTrade or (eth_trade_responses[trade_id][confirmations] > ETH_MAX_BLOCK_HEIGHT * 3 // 4)
+
+		trade_threads_files[trade_index].write(f"Cancel trade: {cancelTrade}\n")
+		trade_threads_files[trade_index].flush()
+		if cancelTrade:
+			cancelStr = "CANCEL-" + str(random.SystemRandom().getrandbits(128))
+			if trade.is_buyer:
+				solution_program = getSolutionProgram(cancelStr).as_bin().hex()
+				tradeClaimContract(trade_index, trade, trade_currency, currency, solution_program, coin_record, True)
+			else:
+				trade_threads_messages[trade_index] = "Cancel trade - waiting for the swap to expire..."
+				trade_threads_commands[trade_index] = None
+				while eth_trade_responses[trade_id]["confirmations"] < ETH_MAX_BLOCK_HEIGHT:
+					trade_threads_messages[trade_index] = f"{ETH_MAX_BLOCK_HEIGHT - eth_trade_responses[trade_id]["confirmations"]} blocks left before you can cancel the swap..."
+					trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
+				trade_threads_messages[trade_index] = "Press the button below to cancel the swap :("
+				trade_threads_commands[trade_index] = {"code": "CANCEL_SWAP", "args": {
+					"contract_address": ETH_CONTRACT_ADDRESS,
+					"swap_id": getResponse(trade_id, "swap_id")
+				}}
+				swap_completed = getResponse(trade_id, "swap_completed")
+		else:
+			if trade.is_buyer:
+				trade_threads_messages[trade_index] = "Press the button below to claim your ETH"
+				trade_threads_commands[trade_index] = {"code": "COMPLETE_SWAP", "args": {
+					"contract_address": ETH_CONTRACT_ADDRESS,
+					"swap_id": getResponse(trade_id, "swap_id"),
+					"secret": trade.secret,
+				}}
+				swap_completed = getResponse(trade_id, "swap_completed")
+			else:
+				trade_threads_messages[trade_index] = "Searching for secret in the Ethereum blockchain..."
+				trade_threads_commands[trade_index] = {"code": "GET_SWAP_SECRET", "args": {
+					"contract_address": ETH_CONTRACT_ADDRESS,
+					"swap_id": getResponse(trade_id, "swap_id"),
+				}}
+				secret = getResponse(trade_id, "secret")
+				solution_program = getSolutionProgram(secret).as_bin().hex()
+				tradeClaimContract(trade_index, trade, trade_currency, currency, solution_program, coin_record)
+		trade_threads_messages[trade_index] = "Done :)"
+		trade_threads_commands[trade_index] = None
+	conn.close()
 
 class EthTrade(Resource):
 	def get(self, trade_id):
@@ -743,12 +902,25 @@ class EthTrade(Resource):
 
 		conn.close()
 
+	def post(self, trade_id):
+		global eth_trade_responses
+		parser = reqparse.RequestParser()
+		parser.add_argument('data', type=dict, required=True)
+
+		args = parser.parse_args(strict=True)
+
+		if eth_trade_responses.get(trade_id, -1) == -1:
+			eth_trade_responses[trade_id] = {}
+
+		for key, value in args['data'].items():
+			eth_trade_responses[trade_id][key] = value
+
 	def put(self, trade_id):
 		parser = reqparse.RequestParser()
 		parser.add_argument('trade_currency', type=dict, required=True)
 		parser.add_argument('eth_from_address', type=str, required=True)
 		parser.add_argument('eth_to_address', type=str, required=True)
-		parser.add_argument('total_wei', type=int, required=True)
+		parser.add_argument('total_gwei', type=int, required=True)
 		parser.add_argument('secret', type=str, required=True)
 		parser.add_argument('secret_hash', type=str, required=True)
 		parser.add_argument('is_buyer', type=bool, required=True)
@@ -773,7 +945,7 @@ class EthTrade(Resource):
 			trade_currency = args['trade_currency']['id'],
 			eth_from_address = args['eth_from_address'],
 			eth_to_address = args['eth_to_address'],
-			total_wei = args['total_wei'],
+			total_gwei = args['total_gwei'],
 			secret_hash = args['secret_hash'],
 			is_buyer = args['is_buyer'],
 			secret = args['secret'],
@@ -800,7 +972,6 @@ api.add_resource(Currencies, '/api/currencies')
 api.add_resource(Trades, '/api/trades')
 api.add_resource(Currency, '/api/currency/<string:address_prefix>')
 api.add_resource(Trade, '/api/trade/<string:trade_id>')
-api.add_resource(EthAddress, '/api/eth/address')
 api.add_resource(EthTrades, '/api/eth/trades')
 api.add_resource(EthTrade, '/api/eth/trade/<string:trade_id>')
 

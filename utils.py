@@ -45,7 +45,7 @@ def ethTradesRowToJson(row, tradeCurrency):
 		'trade_currency': tradeCurrencyRowToJson(tradeCurrency), # row[1]
 		'eth_from_address': row[2],
 		'eth_to_address': row[3],
-		'total_wei': row[4],
+		'total_gwei': row[4],
 		'secret_hash': row[5],
 		'is_buyer': row[6],
 		'secret': row[7],

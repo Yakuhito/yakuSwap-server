@@ -51,9 +51,9 @@ eth_trades = Table(
 	Column('trade_currency', String, ForeignKey('trade_currencies.id')),
 	Column('eth_from_address', String),
 	Column('eth_to_address', String),
-	Column('total_wei', BigInteger(unsigned=True)), # excluding transaction fees
+	Column('total_gwei', BigInteger(unsigned=True)), # excluding transaction fees
 	Column('secret_hash', String),
-	Column('is_buyer', Boolean),
+	Column('is_buyer', Boolean), # false if buying XCH with ETH, true if buying ETH with XCH
 	Column('secret', String),
 	Column('step', Integer(unsigned=True)),
 )
