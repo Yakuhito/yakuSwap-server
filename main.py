@@ -18,7 +18,7 @@ import json
 # Hardhat local network
 # ETH_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 # Rinkeby Test Network
-# ETH_CONTRACT_ADDRESS = "0xD397E6E8580041EeF212ae5eBe964437ce6ACd46"
+ETH_CONTRACT_ADDRESS = "0xD397E6E8580041EeF212ae5eBe964437ce6ACd46"
 ETH_MAX_BLOCK_HEIGHT = 256
 ETH_REQUIRED_CONFIRMATIONS = 40
 
@@ -828,7 +828,7 @@ def ethTradeCode(trade_id):
 				trade_threads_messages[trade_index] = "Cancel trade - waiting for the swap to expire..."
 				trade_threads_commands[trade_index] = None
 				while eth_trade_responses[trade_id]["confirmations"] < ETH_MAX_BLOCK_HEIGHT:
-					trade_threads_messages[trade_index] = f"{ETH_MAX_BLOCK_HEIGHT - eth_trade_responses[trade_id]["confirmations"]} blocks left before you can cancel the swap..."
+					trade_threads_messages[trade_index] = f"{ETH_MAX_BLOCK_HEIGHT - eth_trade_responses[trade_id]['confirmations']} blocks left before you can cancel the swap..."
 					trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
 				trade_threads_messages[trade_index] = "Press the button below to cancel the swap :("
 				trade_threads_commands[trade_index] = {"code": "CANCEL_SWAP", "args": {
