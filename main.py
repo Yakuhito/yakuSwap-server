@@ -332,8 +332,11 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 	trade_threads_messages[trade_index] = "Getting contract solution..."
 	spent_block_index = coin_record["spent_block_index"]
 
-	other_height = other_full_node_client.getBlockchainHeight()
-	other_coin_record = other_full_node_client.getContractCoinRecord(otherProgramPuzzleHash, other_height - 1000 - other_trade_currency.max_block_height, True)
+	other_height = False
+	other_coin_record = False
+	if other_full_node_client != False:
+		other_height = other_full_node_client.getBlockchainHeight()
+		other_coin_record = other_full_node_client.getContractCoinRecord(otherProgramPuzzleHash, other_height - 1000 - other_trade_currency.max_block_height, True)
 
 	while spent_block_index == 0:
 		time.sleep(15)
