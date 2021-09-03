@@ -55,6 +55,8 @@ def getSolutionProgram(secret: str) -> SExp:
 	return ret
 
 def getSecretFromSolutionProgram(program: str) -> str:
+	if program.startswith("0x"):
+		program = program[2:]
 	s = io.BytesIO(bytes.fromhex(program))
 	prg = sexp_from_stream(s, SExp.to)
 	ret = prg.first().as_python().decode()
