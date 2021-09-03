@@ -20,7 +20,7 @@ import json
 # Rinkeby Test Network
 ETH_CONTRACT_ADDRESS = "0xD397E6E8580041EeF212ae5eBe964437ce6ACd46"
 ETH_MAX_BLOCK_HEIGHT = 256
-ETH_REQUIRED_CONFIRMATIONS = 40
+ETH_REQUIRED_CONFIRMATIONS = 5 # TODO: change back to 40 !!!!!!!!!!
 
 app = Flask("yakuSwap")
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -773,9 +773,9 @@ def ethTradeCode(trade_id):
 
 		shouldCancel = getResponse(trade_id, "should_cancel", False)
 
-		s = trades.update().where(trades.c.id == trade_id).values(step = 1)
+		s = eth_trades.update().where(eth_trades.c.id == trade_id).values(step = 1)
 		conn.execute(s)
-		s = trades.select().where(trades.c.id == trade_id)
+		s = eth_trades.select().where(eth_trades.c.id == trade_id)
 		trade = conn.execute(s).all()[0]
 
 		coming_from_step_0 = True
@@ -796,9 +796,9 @@ def ethTradeCode(trade_id):
 				return eth_trade_responses[trade_id]["confirmations"] < ETH_MAX_BLOCK_HEIGHT * 3 // 4
 			#shouldCancel, coin_record = tradeWaitForContract(trade_index, trade, trade_currency, currency, not trade.is_buyer, False, False, False, checkFunc)
 
-		s = trades.update().where(trades.c.id == trade_id).values(step = 2)
+		s = eth_trades.update().where(eth_trades.c.id == trade_id).values(step = 2)
 		conn.execute(s)
-		s = trades.select().where(trades.c.id == trade_id)
+		s = eth_trades.select().where(eth_trades.c.id == trade_id)
 		trade = conn.execute(s).all()[0]
 
 	if trade.step == 2:
