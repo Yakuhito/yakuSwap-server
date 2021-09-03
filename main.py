@@ -783,10 +783,10 @@ def ethTradeCode(trade_id):
 	if trade.step == 1:
 		shouldCancel = shouldCancel or getResponse(trade_id, "should_cancel", False)
 		if not shouldCancel:
-			eth_trade_responses[trade_id][confirmations] = -2
+			eth_trade_responses[trade_id]['confirmations'] = -2
 			trade_threads_messages[trade_index] = f"Starting step 1..."
 			trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
-			while eth_trade_responses[trade_id][confirmations] == -2:
+			while eth_trade_responses[trade_id]['confirmations'] == -2:
 				time.sleep(1)
 
 			trade_threads_commands[trade_index] = None
@@ -808,14 +808,14 @@ def ethTradeCode(trade_id):
 		cancelTrade = shouldCancel or getResponse(trade_id, "should_cancel", False)
 		if not cancelTrade:
 			coin_record, cancelTrade = shouldCancelTrade(trade_index, trade, trade_currency, currency, coin_record)
-			eth_trade_responses[trade_id][confirmations] = -2
+			eth_trade_responses[trade_id]['confirmations'] = -2
 			trade_threads_messages[trade_index] = f"Verifying ETH height..."
 			trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
 			while eth_trade_responses[trade_id]["confirmations"] == -2:
 				time.sleep(1)
 
 			trade_threads_commands[trade_index] = None
-			cancelTrade = cancelTrade or (eth_trade_responses[trade_id][confirmations] > ETH_MAX_BLOCK_HEIGHT * 3 // 4)
+			cancelTrade = cancelTrade or (eth_trade_responses[trade_id]['confirmations'] > ETH_MAX_BLOCK_HEIGHT * 3 // 4)
 
 		trade_threads_files[trade_index].write(f"Cancel trade: {cancelTrade}\n")
 		trade_threads_files[trade_index].flush()
