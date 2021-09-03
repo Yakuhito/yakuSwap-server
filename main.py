@@ -233,7 +233,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 			other_height = other_full_node_client.getBlockchainHeight()
 			if other_height - other_coin_block_index >= other_trade_currency.max_block_height * 3 // 4 - ceil(trade_currency.min_confirmation_height * trade_currency.max_block_height / other_trade_currency.max_block_height):
 				shouldCancel = True
-		if checkFunck != False and checkFunc():
+		if checkFunc != False and checkFunc():
 			shouldCancel = True
 		if not shouldCancel:
 			contract_coin_record = full_node_client.getContractCoinRecord(programPuzzleHash.hex(), height - 1000 - trade_currency.max_block_height)
