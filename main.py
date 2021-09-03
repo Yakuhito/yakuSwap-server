@@ -794,7 +794,7 @@ def ethTradeCode(trade_id):
 			def checkFunc():
 				global eth_trade_responses
 				return eth_trade_responses[trade_id]["confirmations"] < ETH_MAX_BLOCK_HEIGHT * 3 // 4
-			#shouldCancel, coin_record = tradeWaitForContract(trade_index, trade, trade_currency, currency, not trade.is_buyer, False, False, False, checkFunc)
+			shouldCancel, coin_record = tradeWaitForContract(trade_index, trade, trade_currency, currency, not trade.is_buyer, False, False, False, checkFunc)
 
 		s = eth_trades.update().where(eth_trades.c.id == trade_id).values(step = 2)
 		conn.execute(s)
