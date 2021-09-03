@@ -1,8 +1,10 @@
 import sys
 import blspy
+import io
 from bech32m import decode_puzzle_hash, encode_puzzle_hash
 from helper import bytes32
 from clvm.SExp import SExp
+from clvm.serialize import sexp_from_stream
 from clvm_tools.clvmc import compile_clvm_text
 from clvm_tools.curry import curry
 from clvm_tools.sha256tree import sha256tree
@@ -52,8 +54,10 @@ def getSolutionProgram(secret: str) -> SExp:
 	ret = compile_clvm_text(contract, []) # .as_bin().hex()
 	return ret
 
-def getSecretFromSolutionProgram(program: SExp) -> str:
-	ret = program.first().as_python().decode()
+def getSecretFromSolutionProgram(program: str) -> str:
+	s = io.BytesIO(bytes.fromhex(program))
+	prg = sexp_from_stream(s, SExp.to)
+	ret = prg.first().as_python().decode()
 	return ret
 
 
