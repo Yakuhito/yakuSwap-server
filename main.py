@@ -271,7 +271,7 @@ def tradeWaitForContract(trade_index, trade, trade_currency, currency, issue_con
 	time.sleep(5)
 	return shouldCancel, contract_coin_record
 
-def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, coin_record, other_trade_currency, other_currency):
+def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, coin_record, other_trade_currency = False, other_currency = False):
 	global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files
 
 	program = getContractProgram(
@@ -284,15 +284,18 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 	)
 	programPuzzleHash = programToPuzzleHash(program).hex()
 
-	otherProgram = getContractProgram(
-		trade.secret_hash,
-		other_trade_currency.total_amount,
-		other_trade_currency.fee,
-		other_trade_currency.from_address,
-		other_trade_currency.to_address,
-		other_trade_currency.max_block_height
-	)
-	otherProgramPuzzleHash = programToPuzzleHash(otherProgram).hex()
+	otherProgram = False
+	otherProgramPuzzleHash = False
+	if other_currency != False:
+		otherProgram = getContractProgram(
+			trade.secret_hash,
+			other_trade_currency.total_amount,
+			other_trade_currency.fee,
+			other_trade_currency.from_address,
+			other_trade_currency.to_address,
+			other_trade_currency.max_block_height
+		)
+		otherProgramPuzzleHash = programToPuzzleHash(otherProgram).hex()
 
 	trade_threads_files[trade_index].write(f"Loking for solution of contract with puzzlehash {programPuzzleHash}\nKeeping an eye on {otherProgramPuzzleHash}\n")
 	trade_threads_files[trade_index].flush()
@@ -303,12 +306,14 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 		currency.port,
 		trade_threads_files[trade_index]
 	)
-	other_full_node_client = FullNodeClient(
-		other_currency.ssl_directory,
-		other_currency.host,
-		other_currency.port,
-		trade_threads_files[trade_index]
-	)
+	other_full_node_client = False
+	if other_currency != False:
+		other_full_node_client = FullNodeClient(
+			other_currency.ssl_directory,
+			other_currency.host,
+			other_currency.port,
+			trade_threads_files[trade_index]
+		)
 
 	if coin_record == False:
 		trade_threads_messages[trade_index] = "Getting contract coin record..."
@@ -335,11 +340,12 @@ def lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, co
 		height = full_node_client.getBlockchainHeight()
 		coin_record = full_node_client.getContractCoinRecord(programPuzzleHash, height - 1000 - trade_currency.max_block_height, True)
 		spent_block_index = coin_record["spent_block_index"]
-		other_height = other_full_node_client.getBlockchainHeight()
-		if other_height - other_coin_record['confirmed_block_index'] >= other_trade_currency.max_block_height * 3 // 4:
-			trade_threads_files[trade_index].write(f"Other currency time ran out. Exiting...")
-			trade_threads_files[trade_index].flush()
-			return False
+		if other_full_node_client != False:
+			other_height = other_full_node_client.getBlockchainHeight()
+			if other_height - other_coin_record['confirmed_block_index'] >= other_trade_currency.max_block_height * 3 // 4:
+				trade_threads_files[trade_index].write(f"Other currency time ran out. Exiting...")
+				trade_threads_files[trade_index].flush()
+				return False
 		if height - coin_record['confirmed_block_index'] >= trade_currency.max_block_height * 3 // 4:
 			trade_threads_files[trade_index].write(f"Main currency time ran out. Exiting...")
 			trade_threads_files[trade_index].flush()
@@ -841,7 +847,7 @@ def ethTradeCode(trade_id):
 			if not trade.is_buyer:
 				trade_threads_messages[trade_index] = "Searching the Chia blockchan for a solution..."
 				trade_threads_commands[trade_index] = None
-				solution_program = lookForSolutionInBlockchain(trade_index, trade, trade_currency_two, currency_two, coin_record_two, trade_currency_one, currency_one)
+				solution_program = lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, coin_record)
 				secret = getSecretFromSolutionProgram(solution_program)
 				trade_threads_messages[trade_index] = "Press the button below to claim your ETH"
 				trade_threads_commands[trade_index] = {"code": "COMPLETE_SWAP", "args": {
