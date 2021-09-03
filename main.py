@@ -751,7 +751,7 @@ def ethTradeCode(trade_id):
 		trade_threads_files[trade_index].write(f"Swap data: {json.dumps(swap_data)}\n\n")
 		trade_threads_files[trade_index].flush()
 
-		if not trade.is_buyer:
+		if trade.is_buyer:
 			trade_threads_messages[trade_index] = "Press the button below to create the swap on the Ethereum blockchain"
 			trade_threads_commands[trade_index] = {"code": "CREATE_SWAP", "args": swap_data}
 
@@ -784,7 +784,7 @@ def ethTradeCode(trade_id):
 		shouldCancel = shouldCancel or getResponse(trade_id, "should_cancel", False)
 		if not shouldCancel:
 			eth_trade_responses[trade_id]['confirmations'] = -2
-			trade_threads_messages[trade_index] = f"Starting step 1..."
+			trade_threads_messages[trade_index] = f"Getting ETH transaction confirmations..."
 			trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
 			while eth_trade_responses[trade_id]['confirmations'] == -2:
 				time.sleep(1)
@@ -794,7 +794,7 @@ def ethTradeCode(trade_id):
 			def checkFunc():
 				global eth_trade_responses
 				return eth_trade_responses[trade_id]["confirmations"] < ETH_MAX_BLOCK_HEIGHT * 3 // 4
-			shouldCancel, coin_record = tradeWaitForContract(trade_index, trade, trade_currency, currency, trade.is_buyer, False, False, False, checkFunc)
+			shouldCancel, coin_record = tradeWaitForContract(trade_index, trade, trade_currency, currency, not trade.is_buyer, False, False, False, checkFunc)
 
 		s = eth_trades.update().where(eth_trades.c.id == trade_id).values(step = 2)
 		conn.execute(s)
@@ -821,7 +821,7 @@ def ethTradeCode(trade_id):
 		trade_threads_files[trade_index].flush()
 		if cancelTrade:
 			cancelStr = "CANCEL-" + str(random.SystemRandom().getrandbits(128))
-			if trade.is_buyer:
+			if not trade.is_buyer:
 				solution_program = getSolutionProgram(cancelStr).as_bin().hex()
 				tradeClaimContract(trade_index, trade, trade_currency, currency, solution_program, coin_record, True)
 			else:
@@ -837,7 +837,7 @@ def ethTradeCode(trade_id):
 				}}
 				swap_completed = getResponse(trade_id, "swap_completed")
 		else:
-			if trade.is_buyer:
+			if not trade.is_buyer:
 				trade_threads_messages[trade_index] = "Searching the Chia blockchan for a solution..."
 				trade_threads_commands[trade_index] = None
 				solution_program = lookForSolutionInBlockchain(trade_index, trade, trade_currency_two, currency_two, coin_record_two, trade_currency_one, currency_one)
@@ -848,6 +848,7 @@ def ethTradeCode(trade_id):
 					"swap_id": getResponse(trade_id, "swap_id"),
 					"secret": secret,
 				}}
+				swap_completed = getResponse(trade_id, "swap_completed")
 			else:
 				trade_threads_messages[trade_index] = "Preparing to claim XCH..."
 				trade_threads_commands[trade_index] = None
