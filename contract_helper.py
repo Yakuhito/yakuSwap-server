@@ -52,6 +52,10 @@ def getSolutionProgram(secret: str) -> SExp:
 	ret = compile_clvm_text(contract, []) # .as_bin().hex()
 	return ret
 
+def getSecretFromSolutionProgram(program: SExp) -> str:
+	ret = program.first().as_python().decode()
+	return ret
+
 
 def programToPuzzleHash(program: SExp) -> bytes32:
 	return sha256tree(program)

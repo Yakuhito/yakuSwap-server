@@ -4,7 +4,7 @@ from flask_restful import Resource, Api, reqparse, abort
 from config import debug
 from db import currencies, trade_currencies, trades, eth_trades, engine
 from utils import *
-from contract_helper import getAddressFromPuzzleHash, getContractProgram, programToPuzzleHash, getSolutionProgram
+from contract_helper import getAddressFromPuzzleHash, getContractProgram, programToPuzzleHash, getSolutionProgram, getSecretFromSolutionProgram
 from full_node_client import FullNodeClient
 from helper import bytes32
 from clvm.casts import int_from_bytes, int_to_bytes
@@ -794,7 +794,7 @@ def ethTradeCode(trade_id):
 			def checkFunc():
 				global eth_trade_responses
 				return eth_trade_responses[trade_id]["confirmations"] < ETH_MAX_BLOCK_HEIGHT * 3 // 4
-			shouldCancel, coin_record = tradeWaitForContract(trade_index, trade, trade_currency, currency, not trade.is_buyer, False, False, False, checkFunc)
+			shouldCancel, coin_record = tradeWaitForContract(trade_index, trade, trade_currency, currency, trade.is_buyer, False, False, False, checkFunc)
 
 		s = eth_trades.update().where(eth_trades.c.id == trade_id).values(step = 2)
 		conn.execute(s)
@@ -838,22 +838,22 @@ def ethTradeCode(trade_id):
 				swap_completed = getResponse(trade_id, "swap_completed")
 		else:
 			if trade.is_buyer:
+				trade_threads_messages[trade_index] = "Searching the Chia blockchan for a solution..."
+				trade_threads_commands[trade_index] = None
+				solution_program = lookForSolutionInBlockchain(trade_index, trade, trade_currency_two, currency_two, coin_record_two, trade_currency_one, currency_one)
+				secret = getSecretFromSolutionProgram(solution_program)
 				trade_threads_messages[trade_index] = "Press the button below to claim your ETH"
 				trade_threads_commands[trade_index] = {"code": "COMPLETE_SWAP", "args": {
 					"contract_address": ETH_CONTRACT_ADDRESS,
 					"swap_id": getResponse(trade_id, "swap_id"),
-					"secret": trade.secret,
+					"secret": secret,
 				}}
-				swap_completed = getResponse(trade_id, "swap_completed")
 			else:
-				trade_threads_messages[trade_index] = "Searching for secret in the Ethereum blockchain..."
-				trade_threads_commands[trade_index] = {"code": "GET_SWAP_SECRET", "args": {
-					"contract_address": ETH_CONTRACT_ADDRESS,
-					"swap_id": getResponse(trade_id, "swap_id"),
-				}}
-				secret = getResponse(trade_id, "secret")
-				solution_program = getSolutionProgram(secret).as_bin().hex()
+				trade_threads_messages[trade_index] = "Preparing to claim XCH..."
+				trade_threads_commands[trade_index] = None
+				solution_program = getSolutionProgram(trade.secret).as_bin().hex()
 				tradeClaimContract(trade_index, trade, trade_currency, currency, solution_program, coin_record)
+				
 		trade_threads_messages[trade_index] = "Done :)"
 		trade_threads_commands[trade_index] = None
 	conn.close()
