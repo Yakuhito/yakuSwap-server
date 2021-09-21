@@ -56,6 +56,8 @@ eth_trades = Table(
 	Column('is_buyer', Boolean), # true if buying XCH with ETH, false if buying ETH with XCH
 	Column('secret', String),
 	Column('step', Integer(unsigned=True)),
+	Column('network', String),
+	Column('token', String),
 )
 
 meta.create_all(engine)

@@ -1,0 +1,25 @@
+{
+	"networks": [
+		{
+			"name": "Rinkeby Testnet",
+			"address": "0x110383667E3359Bd8779704E703b7720C3a8bfA5",
+			"token_addresses": {
+				"WETH": "0xc778417e063141139fce010982780140aa0cd5ab"
+			}
+		},
+		{
+			"name": "Arbitrum Testnet",
+			"address": "0x43e0b87d84A560782EF0215B67eA76C6B6D18c87",
+			"token_addresses": {
+				"WETH": "0xB47e6A5f8b33b3F17603C83a0535A9dcD7E32681"
+			}
+		},
+		{
+			"name": "Polygon Mumbai Testnet",
+			"address": "0xd9145CCE52D386f254917e481eB44e9943F39138",
+			"token_addresses": {
+				"TST": "0x2d7882bedcbfddce29ba99965dd3cdf7fcb10a1e"
+			}
+		}
+	]
+}

@@ -9,18 +9,12 @@ from full_node_client import FullNodeClient
 from helper import bytes32
 from clvm.casts import int_from_bytes, int_to_bytes
 from math import ceil
+from eth_thing import *
 import random
 import blspy
 import threading
 import time
 import json
-
-# Hardhat local network
-# ETH_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
-# Rinkeby Test Network
-ETH_CONTRACT_ADDRESS = "0xD397E6E8580041EeF212ae5eBe964437ce6ACd46"
-ETH_MAX_BLOCK_HEIGHT = 256
-ETH_REQUIRED_CONFIRMATIONS = 5 # TODO: change back to 40 !!!!!!!!!!
 
 app = Flask("yakuSwap")
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -713,7 +707,7 @@ def getResponse(trade_id, key, retry=True):
 
 def ethTradeCode(trade_id):
 	global trade_threads_ids, trade_threads_messages, trade_threads_addresses, trade_threads_files, eth_trade_responses
-	global ETH_CONTRACT_ADDRESS, ETH_MAX_BLOCK_HEIGHT, ETH_REQUIRED_CONFIRMATIONS
+	global ETH_MAX_BLOCK_HEIGHT, ETH_REQUIRED_CONFIRMATIONS
 	trade_index = 0
 	for i, v in enumerate(trade_threads_ids):
 		if v == trade_id:
@@ -749,7 +743,8 @@ def ethTradeCode(trade_id):
 	swap_id = "None"
 
 	swap_data = {
-		"contract_address": ETH_CONTRACT_ADDRESS,
+		"contract_address": getContractAddress(trade[9]),
+		"token_address": getTokenAddress(trade[9], trade[10]),
 		"secret_hash": trade[5],
 		"from_address": trade[2],
 		"to_address": trade[3],
@@ -842,7 +837,7 @@ def ethTradeCode(trade_id):
 					trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
 				trade_threads_messages[trade_index] = "Press the button below to cancel the swap :("
 				trade_threads_commands[trade_index] = {"code": "CANCEL_SWAP", "args": {
-					"contract_address": ETH_CONTRACT_ADDRESS,
+					"contract_address": getContractAddress(trade[9]),
 					"swap_id": getResponse(trade_id, "swap_id")
 				}}
 				swap_completed = getResponse(trade_id, "swap_completed")
@@ -854,7 +849,7 @@ def ethTradeCode(trade_id):
 				secret = getSecretFromSolutionProgram(solution_program)
 				trade_threads_messages[trade_index] = "Press the button below to claim your ETH"
 				trade_threads_commands[trade_index] = {"code": "COMPLETE_SWAP", "args": {
-					"contract_address": ETH_CONTRACT_ADDRESS,
+					"contract_address": getContractAddress(trade[9]),
 					"swap_id": getResponse(trade_id, "swap_id"),
 					"secret": secret,
 				}}
@@ -979,6 +974,11 @@ class EthTrade(Resource):
 		return {'success': True}
 
 
+class EthNetworks(Resource):
+	def get(self):
+		return json.loads(getNetworksString())
+
+
 api.add_resource(PingService, '/api/ping')
 api.add_resource(ConnectionStatus, '/api/connection-status')
 api.add_resource(Currencies, '/api/currencies')
@@ -986,6 +986,7 @@ api.add_resource(Trades, '/api/trades')
 api.add_resource(Currency, '/api/currency/<string:address_prefix>')
 api.add_resource(Trade, '/api/trade/<string:trade_id>')
 api.add_resource(EthTrades, '/api/eth/trades')
+api.add_resource(EthNetworks, '/api/eth/networks')
 api.add_resource(EthTrade, '/api/eth/trade/<string:trade_id>')
 
 @app.route('/', defaults={'path': 'index.html'})
