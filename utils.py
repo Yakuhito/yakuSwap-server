@@ -49,5 +49,7 @@ def ethTradesRowToJson(row, tradeCurrency):
 		'secret_hash': row[5],
 		'is_buyer': row[6],
 		'secret': row[7],
-		'step': row[8]
+		'step': row[8],
+		'network': row[9],
+		'token': row[10]
 	}

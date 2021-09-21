@@ -934,6 +934,8 @@ class EthTrade(Resource):
 		parser.add_argument('is_buyer', type=bool, required=True)
 		parser.add_argument('secret', type=str, required=True)
 		parser.add_argument('step', type=int, required=True)
+		parser.add_argument('network', type=str, required=True)
+		parser.add_argument('token', type=str, required=True)
 
 		args = parser.parse_args(strict=True)
 
@@ -958,6 +960,8 @@ class EthTrade(Resource):
 			is_buyer = args['is_buyer'],
 			secret = args['secret'],
 			step = args['step'],
+			network = args['network'],
+			token = args['token']
 		)
 		conn.execute(st)
 
