@@ -26,4 +26,4 @@ pyinstaller -F main.py
 mkdir dist/linux
 mv dist/main dist/linux/yakuSwap
 cp contract.clvm dist/linux/contract.clvm
-
+cp networks.json dist/linux/networks.json

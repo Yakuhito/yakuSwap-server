@@ -24,4 +24,4 @@ echo make windows package
 mkdir dist\windows
 move dist\main.exe dist\windows\yakuSwap.exe
 copy contract.clvm dist\windows\contract.clvm
-
+copy networks.json dist\windows\networks.json
