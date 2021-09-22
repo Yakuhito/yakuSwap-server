@@ -757,7 +757,7 @@ def ethTradeCode(trade_id):
 		trade_threads_files[trade_index].flush()
 
 		if trade.is_buyer:
-			trade_threads_messages[trade_index] = "Press the button below to create the swap on the Ethereum blockchain"
+			trade_threads_messages[trade_index] = f"Press the button below to create the swap on the Ethereum blockchain\nMake sure you're connected to the following network: {trade[9]}"
 			trade_threads_commands[trade_index] = {"code": "CREATE_SWAP", "args": swap_data}
 
 			token_approval_tx_sent = getResponse(trade_id, "token_approval_tx_sent")
