@@ -769,7 +769,7 @@ def ethTradeCode(trade_id):
 			trade_threads_messages[trade_index] = "Waiting for 2nd transaction to be confirmed..."
 			created = getResponse(trade_id, "swap_created")
 
-		trade_threads_messages[trade_index] = "Waiting for swap to be confirmed on the Ethereum blockchain..."
+		trade_threads_messages[trade_index] = "Waiting for swap to be confirmed on the Ethereum blockchain...\nMake sure you're connected to the following network: {trade[9]}"
 		trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
 		
 		swap_id = getResponse(trade_id, "swap_id")
