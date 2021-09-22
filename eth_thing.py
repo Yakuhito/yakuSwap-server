@@ -7,8 +7,14 @@ def getNetworksString():
 
 networks = json.loads(getNetworksString())["networks"]
 
+def _getNetwork(networkName):
+	for n in networks:
+		if n["name"] == networkName:
+			return n
+	return networks[0]
+
 def getContractAddress(network):
-	return networks[network]["address"]
+	return _getNetwork(network)["address"]
 
 def getTokenAddress(network, token):
-	return networks[network]["token_addresses"][token]
+	return _getNetwork(network)["token_addresses"][token]

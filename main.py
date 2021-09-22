@@ -760,6 +760,13 @@ def ethTradeCode(trade_id):
 			trade_threads_messages[trade_index] = "Press the button below to create the swap on the Ethereum blockchain"
 			trade_threads_commands[trade_index] = {"code": "CREATE_SWAP", "args": swap_data}
 
+			token_approval_tx_sent = getResponse(trade_id, "token_approval_tx_sent")
+			trade_threads_messages[trade_index] = "Confirming token approval..."
+			trade_threads_commands[trade_index] = None
+			token_approval_tx_confirmed = getResponse(trade_id, "token_approval_tx_confirmed")
+			trade_threads_messages[trade_index] = "Please approve the 2nd transaction"
+			created = getResponse(trade_id, "createSwap_tx_sent")
+			trade_threads_messages[trade_index] = "Waiting for 2nd transaction to be confirmed..."
 			created = getResponse(trade_id, "swap_created")
 
 		trade_threads_messages[trade_index] = "Waiting for swap to be confirmed on the Ethereum blockchain..."
