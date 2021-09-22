@@ -843,10 +843,7 @@ def ethTradeCode(trade_id):
 					trade_threads_messages[trade_index] = f"{ETH_MAX_BLOCK_HEIGHT - eth_trade_responses[trade_id]['confirmations']} blocks left before you can cancel the swap..."
 					trade_threads_commands[trade_index] = {"code": "WAIT_FOR_SWAP", "args": swap_data}
 				trade_threads_messages[trade_index] = "Press the button below to cancel the swap :("
-				trade_threads_commands[trade_index] = {"code": "CANCEL_SWAP", "args": {
-					"contract_address": getContractAddress(trade[9]),
-					"swap_id": getResponse(trade_id, "swap_id")
-				}}
+				trade_threads_commands[trade_index] = {"code": "CANCEL_SWAP", "args": swap_data}
 				swap_completed = getResponse(trade_id, "swap_completed")
 		else:
 			if not trade.is_buyer:
@@ -855,11 +852,8 @@ def ethTradeCode(trade_id):
 				solution_program = lookForSolutionInBlockchain(trade_index, trade, trade_currency, currency, coin_record)
 				secret = getSecretFromSolutionProgram(solution_program)
 				trade_threads_messages[trade_index] = "Press the button below to claim your ETH"
-				trade_threads_commands[trade_index] = {"code": "COMPLETE_SWAP", "args": {
-					"contract_address": getContractAddress(trade[9]),
-					"swap_id": getResponse(trade_id, "swap_id"),
-					"secret": secret,
-				}}
+				swap_data["secret"] = secret
+				trade_threads_commands[trade_index] = {"code": "COMPLETE_SWAP", "args": swap_data}
 				swap_completed = getResponse(trade_id, "swap_completed")
 			else:
 				trade_threads_messages[trade_index] = "Preparing to claim XCH..."
